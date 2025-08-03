@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import {
   View,
   TextInput,
-  Button,
   StyleSheet,
   Alert,
   TouchableOpacity,
   Text,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { saveNote } from '../utils/storage';
 import { useNavigation } from '@react-navigation/native';
+import COLORS from '../constants/colors';
 
 export default function AddNoteScreen() {
   const [title, setTitle] = useState('');
@@ -17,59 +20,145 @@ export default function AddNoteScreen() {
   const navigation = useNavigation();
 
   const handleSave = async () => {
-    if (!title || !content) {
-      Alert.alert('Fill all fields');
+    if (!title.trim()) {
+      Alert.alert('Oops!', 'Please add a title');
       return;
     }
-    console.log('Saving note:', { title, content });
-    await saveNote(title, content);
-    Alert.alert('Saved successfully'); // 🧪 Check if it reaches here
-    navigation.goBack();
+    if (!content.trim()) {
+      Alert.alert('Oops!', 'Note content cannot be empty');
+      return;
+    }
+
+    try {
+      await saveNote(title, content);
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save note');
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <TextInput
-        placeholder="Title"
-        placeholderTextColor="grey"
-        value={title}
-        onChangeText={setTitle}
-        style={styles.input}
-      />
-      <TextInput
-        placeholder="Content"
-        placeholderTextColor="grey"
-        value={content}
-        onChangeText={setContent}
-        multiline
-        style={[styles.input, { height: 100 }]}
-      />
-      <TouchableOpacity style={styles.button} onPress={handleSave}>
-        <Text style={styles.buttonText}>Save</Text>
-      </TouchableOpacity>
-    </View>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>New Note</Text>
+        </View>
+
+        <Text style={styles.label}>Title</Text>
+        <TextInput
+          placeholder="What's this about?"
+          placeholderTextColor={COLORS.gray400}
+          value={title}
+          onChangeText={setTitle}
+          style={styles.titleInput}
+          autoFocus
+          maxLength={60}
+        />
+
+        <Text style={styles.label}>Content</Text>
+        <TextInput
+          placeholder="Start writing your thoughts..."
+          placeholderTextColor={COLORS.gray400}
+          value={content}
+          onChangeText={setContent}
+          multiline
+          style={styles.contentInput}
+          textAlignVertical="top"
+        />
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity 
+            style={[styles.button, (!title || !content) && styles.disabledButton]}
+            onPress={handleSave}
+            disabled={!title || !content}
+          >
+            <Text style={styles.buttonText}>Save Note</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  input: {
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  scrollContainer: {
+    padding: 24,
+    paddingBottom: 100,
+  },
+  header: {
+    marginBottom: 24,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: COLORS.textPrimary,
+  },
+  label: {
+    fontSize: 16,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  titleInput: {
+    backgroundColor: COLORS.white,
     borderWidth: 1,
-    borderColor: '#aaa',
-    padding: 12,
-    marginBottom: 12,
-    borderRadius: 6,
+    borderColor: COLORS.borderLight,
+    padding: 16,
+    marginBottom: 24,
+    borderRadius: 12,
+    fontSize: 18,
+    color: COLORS.textPrimary,
+    elevation: 2,
+    shadowColor: COLORS.shadowLight,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  contentInput: {
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+    padding: 16,
+    borderRadius: 12,
+    fontSize: 16,
+    color: COLORS.textPrimary,
+    minHeight: 200,
+    elevation: 2,
+    shadowColor: COLORS.shadowLight,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    lineHeight: 24,
+  },
+  buttonContainer: {
+    marginTop: 32,
   },
   button: {
-    backgroundColor: '#007bff',
-    padding: 14,
-    borderRadius: 6,
+    backgroundColor: COLORS.black,
+    padding: 18,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: 10,
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: COLORS.shadowPrimary,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  disabledButton: {
+    backgroundColor: COLORS.gray300,
+    opacity: 0.7,
   },
   buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: COLORS.white,
+    fontSize: 18,
+    fontWeight: '600',
   },
 });
